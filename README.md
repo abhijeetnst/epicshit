@@ -23,31 +23,33 @@ bring your own key, and it is only sent to the provider you choose.
 git clone <this repo> && cd <this repo>
 export AI_API_KEY="<provided key>"
 make setup   # installs everything and builds the CLI
-make run     # launches the DopeCode TUI
+make run     # launches the DopeCode TUI in this folder
+make run DIR=/path/to/evaluation-repo   # ...or inside the repository the issue is about
 ```
 
-On first launch, press **Enter** to accept the default on each first-run screen
-(colour theme, trust this folder). Then paste the GitHub issue or test case into the prompt as text and
-press Enter.
+On first launch, press **Enter** once to trust the folder. Then paste the GitHub
+issue or test case into the prompt as text and press Enter.
 
 | Command | What it does |
 | --- | --- |
-| `make setup` | Checks for `git`. Installs bun 1.4.2 (to `~/.bun`) and ripgrep if they are missing. Runs `bun install` and builds `dist/cli.mjs`. |
+| `make setup` | Checks for `git`. Installs bun 1.4.2 (to `~/.bun`) if bun is missing or older, and ripgrep if it is missing. Runs `bun install` and builds `dist/cli.mjs`. |
 | `make run` | Launches the interactive TUI in this folder. `make run DIR=/path/to/repo` runs it inside another checkout, such as the evaluation repository. |
 | `make test` | Runs the test suite (`bun test`), then checks that the built CLI starts. |
-| `make clean` | Removes the generated artefacts: `dist/` and `node_modules/`. |
+| `make clean` | Removes the generated artefacts: `dist/`, `node_modules/` and `.bin/`. |
 | `make install` | Puts a `dope` command on your PATH (see [below](#installing-the-dope-command-on-your-system)). |
 
 ## Requirements
 
 - macOS or Linux (on Windows, use WSL).
-- `git` and `curl`, which the evaluation environment already has.
+- `git`. `make setup` installs `curl` and `unzip` too if they are missing.
 - An API key for DeepSeek, Qwen (Alibaba Cloud Model Studio) or OpenRouter.
 
 `make setup` installs everything else: [bun](https://bun.sh) 1.4.2 (only if
-bun is missing), [ripgrep](https://github.com/BurntSushi/ripgrep) through
-brew/apt/dnf/apk (only if `rg` is missing), and the JavaScript dependencies,
-which are pinned by `bun.lock`.
+bun is missing or older), [ripgrep](https://github.com/BurntSushi/ripgrep) (only if
+`rg` is missing), and the JavaScript dependencies, which are pinned by `bun.lock`.
+System packages come from brew/apt/dnf/apk (with `sudo -n` when not root). Without
+root or passwordless sudo, bun is downloaded from its npm package and a static
+ripgrep into `.bin/`, so setup still works.
 
 ## Installation
 
@@ -175,7 +177,7 @@ adapter replaces it with a text placeholder. No image, audio or video input is n
   queries pin `temperature: 0`.
 - The self-correcting loop stops after `DOPE_VERIFY_MAX_ITERATIONS` rounds.
 - Dependency versions are pinned by `bun.lock`, and `make setup` installs bun 1.4.2
-  when bun is missing.
+  when bun is missing or older.
 
 ## How it works
 
@@ -247,10 +249,10 @@ scripts/build-bundle.ts       build script (bun + esbuild) -> dist/cli.mjs
 | Problem | Fix |
 | --- | --- |
 | `bun: command not found` after `make setup` | Setup installed bun to `~/.bun/bin`. The Makefile finds it automatically; to use bun directly, open a new terminal. |
-| `ripgrep` warning during setup | Install it manually: `brew install ripgrep` or `sudo apt-get install ripgrep`. |
+| `ripgrep` warning during setup | Setup could not install ripgrep or download it. Install it manually: `brew install ripgrep` or `sudo apt-get install ripgrep`. |
 | `No model provider configured` | `AI_API_KEY` is not exported in this shell. |
 | Error saying every endpoint rejected the key | The key is not a valid DeepSeek, Qwen or OpenRouter key. For other providers, set `AI_PROVIDER` or `AI_BASE_URL`. |
-| `Input must be provided ... when using --print` | `make run` needs an interactive terminal. It switches to one-shot mode when stdin is not a TTY. |
+| `Input must be provided ... when using --print` | `make run` was started without a terminal and with nothing on stdin. Run it from an interactive terminal, or pipe the task in for one-shot mode: `echo "fix the failing test" \| make run`. |
 
 ## Development
 

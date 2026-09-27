@@ -7,3 +7,4 @@ dist/
 harness-web.zip
 harness-web/.env.local
 harness-web/.next/
+.bin/

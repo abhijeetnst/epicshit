@@ -103,20 +103,12 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   ) {
     return false;
   }
-  const config = getGlobalConfig();
-  let onboardingShown = false;
-  if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
-  ) {
-    onboardingShown = true;
-    const {
-      Onboarding
-    } = await import('./components/Onboarding.js');
-    await showSetupDialog(root, done => <Onboarding onDone={() => {
-      completeOnboarding();
-      void done();
-    }} />, {
-      onChangeAppState
-    });
+  // ponytail: no first-run onboarding screens. Theme defaults to 'dark'
+  // (change with /theme); the trust dialog below carries the "only use code you
+  // trust" warning; a new OPENAI_API_KEY is still approved further down; the
+  // terminal-setup offer stays available as /terminal-setup.
+  if (!getGlobalConfig().hasCompletedOnboarding) {
+    completeOnboarding();
   }
 
   // Always show the trust dialog in interactive sessions, regardless of permission mode.
@@ -253,7 +245,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     }
   }
 
-  return onboardingShown;
+  return false;
 }
 export function getRenderContext(exitOnCtrlC: boolean): {
   renderOptions: RenderOptions;
