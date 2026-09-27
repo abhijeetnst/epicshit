@@ -82,6 +82,6 @@ export function getModelCapability(model: string): ModelCapability | undefined {
 }
 
 export async function refreshModelCapabilities(): Promise<void> {
-  // Model capabilities came from Anthropic's /v1/models; OpenAI-compatible
+  // Model capabilities used to come from a /v1/models call; OpenAI-compatible
   // providers don't publish context/output limits there, so nothing to fetch.
 }

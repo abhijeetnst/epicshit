@@ -43,7 +43,6 @@ import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEve
 import { AGENT_TOOL_NAME } from '../../tools/AgentTool/constants.js'
 import { BASH_TOOL_NAME } from '../../tools/BashTool/toolName.js'
 /* eslint-enable @typescript-eslint/no-require-imports */
-import { POWERSHELL_TOOL_NAME } from '../../tools/PowerShellTool/toolName.js'
 import { getToolsForDefaultPreset, parseToolPreset } from '../../tools.js'
 import {
   getFsImplementation,
@@ -139,92 +138,6 @@ export function isDangerousBashPermission(
 }
 
 /**
- * Checks if a PowerShell permission rule is dangerous for auto mode.
- * A rule is dangerous if it would auto-allow commands that execute arbitrary
- * code (nested shells, Invoke-Expression, Start-Process, etc.), bypassing the
- * classifier's safety evaluation.
- *
- * PowerShell is case-insensitive, so rule content is lowercased before matching.
- */
-export function isDangerousPowerShellPermission(
-  toolName: string,
-  ruleContent: string | undefined,
-): boolean {
-  if (toolName !== POWERSHELL_TOOL_NAME) {
-    return false
-  }
-
-  // Tool-level allow (PowerShell with no content, or PowerShell(*)) - allows ALL commands
-  if (ruleContent === undefined || ruleContent === '') {
-    return true
-  }
-
-  const content = ruleContent.trim().toLowerCase()
-
-  // Standalone wildcard (*) matches everything
-  if (content === '*') {
-    return true
-  }
-
-  // PS-specific cmdlet names. CROSS_PLATFORM_CODE_EXEC is shared with bash.
-  const patterns: readonly string[] = [
-    ...CROSS_PLATFORM_CODE_EXEC,
-    // Nested PS + shells launchable from PS
-    'pwsh',
-    'powershell',
-    'cmd',
-    'wsl',
-    // String/scriptblock evaluators
-    'iex',
-    'invoke-expression',
-    'icm',
-    'invoke-command',
-    // Process spawners
-    'start-process',
-    'saps',
-    'start',
-    'start-job',
-    'sajb',
-    'start-threadjob', // bundled PS 6.1+; takes -ScriptBlock like Start-Job
-    // Event/session code exec
-    'register-objectevent',
-    'register-engineevent',
-    'register-wmievent',
-    'register-scheduledjob',
-    'new-pssession',
-    'nsn', // alias
-    'enter-pssession',
-    'etsn', // alias
-    // .NET escape hatches
-    'add-type', // Add-Type -TypeDefinition '<C#>' → P/Invoke
-    'new-object', // New-Object -ComObject WScript.Shell → .Run()
-  ]
-
-  for (const pattern of patterns) {
-    // patterns stored lowercase; content lowercased above
-    if (content === pattern) return true
-    if (content === `${pattern}:*`) return true
-    if (content === `${pattern}*`) return true
-    if (content === `${pattern} *`) return true
-    if (content.startsWith(`${pattern} -`) && content.endsWith('*')) return true
-    // .exe — goes on the FIRST word. `python` → `python.exe`.
-    // `npm run` → `npm.exe run` (npm.exe is the real Windows binary name).
-    // A rule like `PowerShell(npm.exe run:*)` needs to match `npm run`.
-    const sp = pattern.indexOf(' ')
-    const exe =
-      sp === -1
-        ? `${pattern}.exe`
-        : `${pattern.slice(0, sp)}.exe${pattern.slice(sp)}`
-    if (content === exe) return true
-    if (content === `${exe}:*`) return true
-    if (content === `${exe}*`) return true
-    if (content === `${exe} *`) return true
-    if (content.startsWith(`${exe} -`) && content.endsWith('*')) return true
-  }
-  return false
-}
-
-/**
  * Checks if an Agent (sub-agent) permission rule is dangerous for auto mode.
  * Any Agent allow rule would auto-approve sub-agent spawns before the auto mode classifier
  * can evaluate the sub-agent's prompt, defeating delegation attack prevention.
@@ -271,7 +184,6 @@ function isDangerousClassifierPermission(
   }
   return (
     isDangerousBashPermission(toolName, ruleContent) ||
-    isDangerousPowerShellPermission(toolName, ruleContent) ||
     isDangerousTaskPermission(toolName, ruleContent)
   )
 }
@@ -280,8 +192,7 @@ function isDangerousClassifierPermission(
  * Finds all dangerous permissions from rules loaded from disk and CLI arguments.
  * Returns structured info about each dangerous permission found.
  *
- * Checks Bash permissions (wildcard/interpreter patterns), PowerShell permissions
- * (wildcard/iex/Start-Process patterns), and Agent permissions (any allow rule
+ * Checks Bash permissions (wildcard/interpreter patterns) and Agent permissions (any allow rule
  * bypasses the classifier's sub-agent evaluation).
  */
 export function findDangerousClassifierPermissions(
@@ -349,21 +260,6 @@ export function isOverlyBroadBashAllowRule(
 }
 
 /**
- * PowerShell equivalent of isOverlyBroadBashAllowRule.
- *
- * Matches: PowerShell, PowerShell(*), PowerShell() — all parse to
- * { toolName: 'PowerShell' } with no ruleContent.
- */
-export function isOverlyBroadPowerShellAllowRule(
-  ruleValue: PermissionRuleValue,
-): boolean {
-  return (
-    ruleValue.toolName === POWERSHELL_TOOL_NAME &&
-    ruleValue.ruleContent === undefined
-  )
-}
-
-/**
  * Finds all overly broad Bash allow rules from settings and CLI arguments.
  * An overly broad rule allows ALL bash commands (e.g., Bash or Bash(*)),
  * which is effectively equivalent to YOLO/bypass-permissions mode.
@@ -395,44 +291,6 @@ export function findOverlyBroadBashPermissions(
         ruleValue: parsed,
         source: 'cliArg',
         ruleDisplay: `${BASH_TOOL_NAME}(*)`,
-        sourceDisplay: '--allowed-tools',
-      })
-    }
-  }
-
-  return overlyBroad
-}
-
-/**
- * PowerShell equivalent of findOverlyBroadBashPermissions.
- */
-export function findOverlyBroadPowerShellPermissions(
-  rules: PermissionRule[],
-  cliAllowedTools: string[],
-): DangerousPermissionInfo[] {
-  const overlyBroad: DangerousPermissionInfo[] = []
-
-  for (const rule of rules) {
-    if (
-      rule.ruleBehavior === 'allow' &&
-      isOverlyBroadPowerShellAllowRule(rule.ruleValue)
-    ) {
-      overlyBroad.push({
-        ruleValue: rule.ruleValue,
-        source: rule.source,
-        ruleDisplay: `${POWERSHELL_TOOL_NAME}(*)`,
-        sourceDisplay: formatPermissionSource(rule.source),
-      })
-    }
-  }
-
-  for (const toolSpec of cliAllowedTools) {
-    const parsed = permissionRuleValueFromString(toolSpec)
-    if (isOverlyBroadPowerShellAllowRule(parsed)) {
-      overlyBroad.push({
-        ruleValue: parsed,
-        source: 'cliArg',
-        ruleDisplay: `${POWERSHELL_TOOL_NAME}(*)`,
         sourceDisplay: '--allowed-tools',
       })
     }
@@ -938,9 +796,8 @@ export async function initializeToolPermissionContext({
   const rulesFromDisk = loadAllPermissionRulesFromDisk()
 
   // Ant-only: Detect overly broad shell allow rules for all modes.
-  // Bash(*) or PowerShell(*) are equivalent to YOLO mode for that shell.
+  // Bash(*) is equivalent to YOLO mode.
   // Skip in CCR/BYOC where --allowed-tools is the intended pre-approval mechanism.
-  // Variable name kept for return-field compat; contains both shells.
   let overlyBroadBashPermissions: DangerousPermissionInfo[] = []
   if (
     process.env.USER_TYPE === 'ant' &&
@@ -949,15 +806,11 @@ export async function initializeToolPermissionContext({
   ) {
     overlyBroadBashPermissions = [
       ...findOverlyBroadBashPermissions(rulesFromDisk, parsedAllowedToolsCli),
-      ...findOverlyBroadPowerShellPermissions(
-        rulesFromDisk,
-        parsedAllowedToolsCli,
-      ),
     ]
   }
 
   // Ant-only: Detect dangerous shell permissions for auto mode
-  // Dangerous permissions (like Bash(*), Bash(python:*), PowerShell(iex:*)) would auto-allow
+  // Dangerous permissions (like Bash(*), Bash(python:*)) would auto-allow
   // before the classifier can evaluate them, defeating the purpose of safer YOLO mode
   let dangerousPermissions: DangerousPermissionInfo[] = []
   if (feature('TRANSCRIPT_CLASSIFIER') && permissionMode === 'auto') {

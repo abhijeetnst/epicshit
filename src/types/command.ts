@@ -155,13 +155,13 @@ type LocalJSXCommand = {
  * of the listed auth types. See meetsAvailabilityRequirement() in commands.ts.
  *
  * Example: `availability: ['dope-ai', 'console']` shows the command to
- * dope.ai subscribers and direct Console API key users (api.anthropic.com),
+ * dope.ai subscribers and direct API key users,
  * but hides it from Bedrock/Vertex/Foundry users and custom base URL users.
  */
 export type CommandAvailability =
   // dope.ai OAuth subscriber (Pro/Max/Team/Enterprise via dope.ai)
   | 'dope-ai'
-  // Console API key user (direct api.anthropic.com, not via dope.ai OAuth)
+  // API key user (not via OAuth)
   | 'console'
 
 export type CommandBase = {

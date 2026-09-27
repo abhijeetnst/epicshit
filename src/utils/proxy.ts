@@ -282,7 +282,7 @@ export function getWebSocketProxyUrl(url: string): string | undefined {
  *   env var is set by `dope ssh` on the remote CLI to route API calls through
  *   an ssh -R forwarded unix socket to a local auth proxy. It MUST NOT leak
  *   into non-EpicShit-API fetch paths (MCP HTTP/SSE transports, etc.) or those
- *   requests get misrouted to api.anthropic.com. Only the EpicShit SDK client
+ *   requests get misrouted to the default API host. Only the EpicShit SDK client
  *   should pass `true` here.
  */
 export function getProxyFetchOptions(opts?: { forEpicShitAPI?: boolean }): {

@@ -7,8 +7,7 @@
  * permissionSetup.ts, which strip such rules at auto-mode entry.
  *
  * The matcher in each predicate handles the rule-shape variants (exact, `:*`,
- * trailing `*`, ` *`, ` -…*`). PS-specific cmdlet strings live in
- * isDangerousPowerShellPermission (permissionSetup.ts).
+ * trailing `*`, ` *`, ` -…*`).
  */
 
 /**

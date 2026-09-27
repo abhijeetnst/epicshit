@@ -158,7 +158,7 @@ async function* queryModel({
   }
   const model = pickModel(options.model, provider)
 
-  // ToolSearch returns Anthropic tool_reference blocks; OpenAI-compatible
+  // ToolSearch returns tool_reference blocks; OpenAI-compatible
   // endpoints can't use them, so every tool is sent directly.
   const filteredTools = tools.filter(t => !toolMatchesName(t, TOOL_SEARCH_TOOL_NAME))
   const toolSchemas = [

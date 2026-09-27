@@ -3,7 +3,7 @@
 // The agent loop (messages, tools, compaction, transcripts) is built around
 // block-based content: text / image / tool_use / tool_result / thinking blocks,
 // plus streaming events shaped like message_start / content_block_delta.
-// These used to be imported from @anthropic-ai/sdk. DopeCode owns them now; the
+// DopeCode owns these message and stream types; the
 // OpenAI-compatible adapter (openaiProvider.ts) translates to/from them.
 
 // ── Content blocks: request side ────────────────────────────────────────────

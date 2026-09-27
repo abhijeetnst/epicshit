@@ -54,7 +54,7 @@ export function getMCPUserAgent(): string {
 // operators match in robots.txt); the dope-code suffix lets them distinguish
 // local CLI traffic from dope.ai server-side fetches.
 export function getWebFetchUserAgent(): string {
-  return `Dope-User (${getDopeCodeUserAgent()}; +https://support.anthropic.com/)`
+  return `Dope-User (${getDopeCodeUserAgent()})`
 }
 
 export type AuthHeaders = {

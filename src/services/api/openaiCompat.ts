@@ -1,7 +1,7 @@
 // OpenAI-compatible Chat Completions adapter (DeepSeek, Qwen/DashScope,
 // OpenAI, OpenRouter, vLLM/Ollama/LM Studio).
 //
-// The agent loop is built around block-based messages and Anthropic-style
+// The agent loop is built around block-based messages and block-level
 // stream events (message_start / content_block_* / message_delta). This module
 // translates in both directions so the loop, tools, hooks and todo tracking
 // don't change:
@@ -88,7 +88,7 @@ export function reasoningFieldFor(provider: string): ReasoningField {
   return 'reasoning_content'
 }
 
-/** Internal (Anthropic-shaped) conversation -> Chat Completions messages. */
+/** Internal (block-based) conversation -> Chat Completions messages. */
 export function toChatMessages(
   system: string,
   messages: MessageParam[],
@@ -355,7 +355,7 @@ type ChunkDelta = {
 }
 
 /**
- * Streams one completion as Anthropic-shaped events. The final
+ * Streams one completion as block-based stream events. The final
  * `message_delta` carries stop_reason and usage.
  */
 export async function* streamChatCompletion(
