@@ -1,0 +1,46 @@
+import {
+  hasUsedBackslashReturn,
+  isShiftEnterKeyBindingInstalled,
+} from '../../commands/terminalSetup/terminalSetup.js'
+import type { Key } from '../../ink.js'
+
+export function getNewlineInstructions(): string {
+  // For iTerm2 and VSCode, show Shift+Enter instructions if installed
+  if (isShiftEnterKeyBindingInstalled()) {
+    return 'shift + ⏎ for newline'
+  }
+
+  // Otherwise show backslash+return instructions
+  return hasUsedBackslashReturn()
+    ? '\\⏎ for newline'
+    : 'backslash (\\) + return (⏎) for newline'
+}
+
+/**
+ * True when the keystroke is a printable character that does not begin
+ * with whitespace — i.e., a normal letter/digit/symbol the user typed.
+ * Used to gate the lazy space inserted after an image pill.
+ */
+export function isNonSpacePrintable(input: string, key: Key): boolean {
+  if (
+    key.ctrl ||
+    key.meta ||
+    key.escape ||
+    key.return ||
+    key.tab ||
+    key.backspace ||
+    key.delete ||
+    key.upArrow ||
+    key.downArrow ||
+    key.leftArrow ||
+    key.rightArrow ||
+    key.pageUp ||
+    key.pageDown ||
+    key.home ||
+    key.end
+  ) {
+    return false
+  }
+  return input.length > 0 && !/^\s/.test(input) && !input.startsWith('\x1b')
+}
+

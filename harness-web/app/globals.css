@@ -1,0 +1,696 @@
+@import "tailwindcss";
+
+/* DopeCode palette: warm graphite, off-white ink, and one coral accent that
+   matches the crabs. Coral marks the brand and live state (streaming, busy,
+   focus); amber is its second voice in gradients. */
+:root {
+  --bg: #0c0b0a;
+  --surface: #141312;
+  --raised: #1b1a18;
+  --hover: #232120;
+  --line: #282624;
+  --line-strong: #36332f;
+  --ink: #eeeae4;
+  --muted: #a09a92;
+  --faint: #66615a;
+  --accent: #eb8762;
+  --accent-fg: #f09472;
+  --accent-ink: #1d0e07;
+  --accent-soft: rgb(235 135 98 / 0.13);
+  --accent-2: #f2b35e;
+  --danger: #ff6262;
+  --ok: #7fd89a;
+  --dot: #292725;
+  --wm-ink: #3d3a36;
+  --wm-counter: #1d1c1a;
+  --wm-hot: #e8835c;
+  --wm-hot-counter: #3a2219;
+  --wm-shine: #ffdcca;
+  --shadow: 0 30px 70px -24px rgb(0 0 0 / 0.8), 0 0 0 1px var(--line);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ebe8e2;
+    --surface: #f7f5f0;
+    --raised: #ffffff;
+    --hover: #eeebe5;
+    --line: #dfdbd3;
+    --line-strong: #cbc6bb;
+    --ink: #1c1a17;
+    --muted: #66615a;
+    --faint: #9c968c;
+    --accent: #d0663f;
+    --accent-fg: #ad4e29;
+    --accent-ink: #ffffff;
+    --accent-soft: rgb(208 102 63 / 0.12);
+    --accent-2: #d9962f;
+    --danger: #cf3a3a;
+    --ok: #2e8a4c;
+    --dot: #d8d3c9;
+    --wm-ink: #c7c1b6;
+    --wm-counter: #e8e4dc;
+    --wm-hot: #cf6a43;
+    --wm-hot-counter: #f1d9cc;
+    --wm-shine: #ffe3d4;
+    --shadow: 0 30px 70px -28px rgb(40 25 10 / 0.35), 0 0 0 1px var(--line);
+    color-scheme: light;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-2: var(--accent-2);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --font-sans: var(--font-hanken), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-fragment), ui-monospace, monospace;
+  --font-pixel: var(--font-silkscreen), var(--font-fragment), monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+*:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Text fields draw their own focus state (a stronger border). */
+input:is([type="text"], [type="password"], :not([type])):focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- Canvas backdrop: film grain, a dot grid, and a lime spotlight that
+        follows the cursor --------------------------------------------------- */
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+}
+
+.dots-lit {
+  background-image: radial-gradient(circle, var(--accent) 1px, transparent 1.4px);
+  mask-image: radial-gradient(240px circle at var(--mx, -9999px) var(--my, -9999px), rgb(0 0 0 / 0.5), transparent 75%);
+  transition: opacity 0.4s;
+}
+
+.aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 78%;
+  aspect-ratio: 3 / 1;
+  translate: -50% -50%;
+  background: radial-gradient(closest-side, var(--accent-soft), transparent);
+  filter: blur(28px);
+  animation: breathe 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.15);
+    opacity: 0.65;
+  }
+}
+
+/* ---- Wordmark -------------------------------------------------------------- */
+
+@keyframes wm-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-40%);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(6%);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wm-drop {
+  transform-box: fill-box;
+  animation: wm-drop 720ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+/* ---- Prompt box: a spinning conic border that wakes up on focus and races
+        while the agent works ------------------------------------------------ */
+
+@property --ring-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ring {
+  position: relative;
+  border-radius: 15px;
+  padding: 1px;
+  background: var(--line);
+  transition:
+    background 0.3s,
+    box-shadow 0.5s;
+}
+
+.ring:focus-within {
+  background: var(--line-strong);
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--ring-angle),
+    transparent 0deg 285deg,
+    var(--accent) 325deg,
+    var(--accent-2) 348deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  opacity: 0;
+  transition: opacity 0.4s;
+  animation: ring-spin 5s linear infinite;
+  pointer-events: none;
+}
+
+.ring:focus-within::before {
+  opacity: 0.9;
+}
+
+.ring[data-busy="true"]::before {
+  opacity: 1;
+  animation-duration: 1.5s;
+}
+
+.ring[data-busy="true"] {
+  box-shadow: 0 0 46px -14px var(--accent);
+}
+
+@keyframes ring-spin {
+  to {
+    --ring-angle: 360deg;
+  }
+}
+
+/* ---- Motion helpers ---------------------------------------------------------------- */
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.blink {
+  animation: blink 1.05s steps(1) infinite;
+}
+
+/* The lime block cursor that trails streaming text. */
+.streaming > :last-child::after,
+.caret::after {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.16em;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  animation: blink 1.05s steps(1) infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.rise {
+  animation: rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pop-in {
+  animation: pop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.bob {
+  animation: bob 0.5s ease-in-out infinite;
+}
+
+/* Three pixels hopping: the "working" indicator. */
+.pixel-loader {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 9px;
+}
+.pixel-loader i {
+  width: 3px;
+  height: 3px;
+  background: var(--accent);
+  animation: px-hop 0.9s ease-in-out infinite;
+}
+.pixel-loader i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.pixel-loader i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes px-hop {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+}
+
+/* A lime sweep across a running tool call. */
+.shimmer {
+  background-image: linear-gradient(100deg, transparent 20%, var(--accent-soft) 50%, transparent 80%);
+  background-size: 220% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+/* ---- Native dialog ------------------------------------------------------------------ */
+
+dialog.sheet {
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  max-height: min(680px, calc(100dvh - 48px));
+  width: min(640px, calc(100vw - 32px));
+  overflow: hidden;
+}
+
+dialog.sheet[open] {
+  display: flex;
+  flex-direction: column;
+  animation: sheet-in 260ms cubic-bezier(0.2, 0.9, 0.25, 1.05) both;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.965);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+dialog.sheet::backdrop {
+  background: rgb(5 6 4 / 0.6);
+  backdrop-filter: blur(3px);
+  animation: fade-in 200ms ease-out both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---- Crabs ------------------------------------------------------------------------ */
+
+/* Width and height come from the engine, which scales the sprite. */
+.crab {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  transition: opacity 0.3s;
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.3));
+}
+
+.crab svg {
+  display: block;
+}
+
+.crab-tag {
+  position: absolute;
+  right: -7px;
+  top: -9px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.1;
+}
+.crab-tag:empty {
+  display: none;
+}
+.crab-active .crab-tag {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.crab-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--line-strong);
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.7);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.crab-bubble.show {
+  opacity: 1;
+}
+.crab-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4.5px;
+  width: 7px;
+  height: 7px;
+  background: inherit;
+  border-right: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+.crab-bubble[data-tone="busy"]::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+.crab-bubble[data-tone="ok"] {
+  color: var(--ok);
+}
+.crab-bubble[data-tone="danger"] {
+  color: var(--danger);
+}
+.crab-bubble[data-tone="muted"] {
+  color: var(--muted);
+}
+
+.crab-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.crab-card.show {
+  opacity: 1;
+}
+.crab-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+.crab-card-meta {
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.crab-card[data-busy="true"] .crab-card-meta {
+  color: var(--accent-fg);
+}
+.crab-card-hint {
+  margin-top: 6px;
+  color: var(--faint);
+  font-size: 10.5px;
+}
+
+.crab-fx {
+  position: absolute;
+  color: var(--muted);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+  animation: crab-z 2.2s ease-out forwards;
+}
+
+@keyframes crab-z {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(40%, -380%) scale(1.3);
+  }
+}
+
+html.crab-hover,
+html.crab-hover * {
+  cursor: pointer !important;
+}
+
+html.crab-grabbing,
+html.crab-grabbing * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wm-drop,
+  .rise,
+  .pop-in,
+  .aura,
+  .bob,
+  .shimmer,
+  .pixel-loader i,
+  .ring::before,
+  dialog.sheet[open] {
+    animation: none;
+  }
+  .blink,
+  .streaming > :last-child::after,
+  .caret::after {
+    animation: none;
+  }
+}
+
+/* ---- Markdown in assistant messages ------------------------------------------------ */
+
+.md {
+  line-height: 1.65;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.md > * + * {
+  margin-top: 0.75em;
+}
+.md strong {
+  font-weight: 650;
+  color: var(--ink);
+}
+.md a {
+  color: var(--accent-fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.md pre {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+.md pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+.md blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+  color: var(--muted);
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.25em;
+}
+.md li + li {
+  margin-top: 0.25em;
+}
+.md h1,
+.md h2,
+.md h3 {
+  font-weight: 650;
+  line-height: 1.3;
+}
+.md h1 {
+  font-size: 1.3em;
+}
+.md h2 {
+  font-size: 1.15em;
+}
+.md table {
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+}

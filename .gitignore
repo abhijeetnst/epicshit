@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+.remember/
+.env
+*.log
+harness-web.zip
+harness-web/.env.local
+harness-web/.next/
